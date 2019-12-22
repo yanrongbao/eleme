@@ -1,20 +1,50 @@
 <template>
     <div id="app">
         <v-header :seller="seller"></v-header>
-        <header-detail :seller="seller"></header-detail>
+        <tab :tabs="tabs" :initialIndex="0"></tab>
     </div>
 </template>
 
 <script>
 import VHeader from 'components/v-header/v-header.vue';
-import HeaderDetail from 'components/header-detail/header-detail.vue';
-import { getSeller } from 'api'
+import tab from 'components/tab/tab.vue';
+import Goods from 'components/goods/goods.vue';
+import Ratings from 'components/ratings/ratings.vue';
+import Seller from 'components/seller/seller.vue';
+import { getSeller } from 'api';
 
 export default {
     name: 'app',
     data () {
         return {
             seller: {}
+        }
+    },
+    computed: {
+        tabs () {
+            return [
+                {
+                    label: '商品',
+                    component: Goods,
+                    data: {
+                        seller: this.seller
+                    }
+                },
+                {
+                    label: '评价',
+                    component: Ratings,
+                    data: {
+                        seller: this.seller
+                    }
+                },
+                {
+                    label: '商家',
+                    component: Seller,
+                    data: {
+                        seller: this.seller
+                    }
+                }
+            ]
         }
     },
     methods: {
@@ -29,7 +59,7 @@ export default {
     },
     components: {
         VHeader,
-        HeaderDetail
+        tab
     }
 }
 </script>
