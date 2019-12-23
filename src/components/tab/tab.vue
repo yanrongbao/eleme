@@ -1,20 +1,24 @@
 <template>
     <div class="tab">
-        <cube-tab-bar :showSlider="true" v-model="selectedLabel" :data="tabs" ref="tabBar"></cube-tab-bar>
+        <cube-tab-bar :showSlider="true"
+                      v-model="selectedLabel"
+                      :data="tabs"
+                      ref="tabBar"></cube-tab-bar>
         <div class="slide-wrapper">
-            <cube-slide
-                :loop="false"
-                :auto-play="false"
-                :show-dots="false"
-                :initial-index="initialIndex"
-                :options="slideOptions"
-                :useTransition="false"
-                ref="slide"
-                @change="onChange"
-                @scroll="onScroll"
-            >
-                <cube-slide-item v-for="(tab,index) in tabs" :key="index">
-                    <component :is="tab.component" :data="tab.data"></component>
+            <cube-slide :loop="false"
+                        :auto-play="false"
+                        :show-dots="false"
+                        :initial-index="index"
+                        :options="slideOptions"
+                        :useTransition="false"
+                        ref="slide"
+                        @change="onChange"
+                        @scroll="onScroll">
+                <cube-slide-item v-for="(tab,index) in tabs"
+                                 :key="index">
+                    <component :is="tab.component"
+                               :data="tab.data"
+                               ref="component"></component>
                 </cube-slide-item>
             </cube-slide>
         </div>
@@ -54,9 +58,14 @@ export default {
             }
         }
     },
+    mounted () {
+        this.onChange(this.index);
+    },
     methods: {
         onChange (current) {
             this.index = current;
+            const component = this.$refs.component[current];
+            component.fetch && component.fetch()
         },
         onScroll (pos) {
             const tabBarWidth = this.$refs.tabBar.$el.clientWidth;
@@ -68,18 +77,19 @@ export default {
 }
 </script>
 <style lang="stylus" scoped>
-.tab {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-
-    .slide-wrapper {
-        flex: 1;
-        overflow: hidden;
-    }
-
-    >>> .cube-tab {
-        padding: 10px 0;
-    }
-}
+.tab
+    display flex;
+    flex-direction column;
+    position absolute;
+    top 134px;
+    left 0;
+    right 0;
+    bottom 0;
+    // overflow scroll;
+    .slide-wrapper
+        height 100%;
+    >>> .cube-slide-item
+        position relative;
+    >>> .cube-tab
+        padding 10px 0;
 </style>
