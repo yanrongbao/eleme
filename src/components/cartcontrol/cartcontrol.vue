@@ -3,7 +3,7 @@
         <transition name="move">
             <div class="cart-decrease"
                  v-show="food.count>0"
-                 @click.stop.prevent="decreaseCart">
+                 @touchstart.stop.prevent="decreaseCart">
                 <span class="inner icon-remove_circle_outline"></span>
             </div>
         </transition>
@@ -31,9 +31,6 @@ export default {
             this.$emit('add', event.target);
         },
         decreaseCart (event) {
-            if (!event._constructed) {
-                return;
-            }
             if (this.food.count) {
                 this.food.count--;
             }
@@ -47,7 +44,7 @@ export default {
     font-size 0;
     .cart-decrease
         display inline-block;
-        padding 6px;
+        // padding 6px;
         opacity 1;
         transform translate3d(0, 0, 0);
         .inner
@@ -68,14 +65,13 @@ export default {
         display inline-block;
         vertical-align top;
         width 12px;
-        padding-top 6px;
         line-height 24px;
         text-align center;
         font-size 10px;
         color rgb(147, 153, 159);
     .cart-add
         display inline-block;
-        padding 6px;
+        // padding 6px;
         line-height 24px;
         font-size 24px;
         color rgb(0, 160, 220);

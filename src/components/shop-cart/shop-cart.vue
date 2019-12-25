@@ -39,69 +39,24 @@
                     </transition>
                 </div>
             </div>
-            <transition name="fold">
-                <div class="shopcart-list"
-                     v-show="listShow">
-                    <div class="list-header">
-                        <h1 class="title">购物车</h1>
-                        <span class="empty"
-                              @click="empty">清空</span>
-                    </div>
-                    <div class="list-content"
-                         ref="listContent">
-                        <ul>
-                            <li class="food"
-                                v-for="(food,index) in selectFoods"
-                                :key="index">
-                                <span class="name">{{food.name}}</span>
-                                <div class="price">
-                                    <span>￥{{food.price*food.count}}</span>
-                                </div>
-                                <div class="cartcontrol-wrapper">
-                                    <cartcontrol @add="addFood"
-                                                 :food="food"></cartcontrol>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </transition>
         </div>
-        <transition name="fade">
-            <div class="list-mask"
-                 @click="hideList"
-                 v-show="listShow"></div>
-        </transition>
     </div>
 </template>
 
 <script type="text/ecmascript-6">
-import BScroll from 'better-scroll';
-import cartcontrol from 'components/cartcontrol/cartcontrol';
-
+const BALL_LEN = 10;
+function createBalls () {
+    let ret = [];
+    for (let i = 0; i < BALL_LEN; i++) {
+        ret.push({
+            show: false
+        })
+    }
+    return ret;
+}
 export default {
-    watch: {
-        totalCount: function () {
-            if (!this.totalCount) {
-                this.fold = false
-                return false
-            }
-        },
-        fold: function (totalCount) {
-            let show = this.fold
-            if (show) {
-                this.$nextTick(() => {
-                    if (!this.scroll) {
-                        this.scroll = new BScroll(this.$refs.listContent, {
-                            click: true
-                        })
-                    } else {
-                        this.scroll.refresh()
-                    }
-                })
-            }
-            return show
-        }
+    created () {
+        this.classMap = ['decrease', 'discount', 'special', 'invoice', 'guarantee'];
     },
     props: {
         selectFoods: {
@@ -122,29 +77,21 @@ export default {
         minPrice: {
             type: Number,
             default: 0
+        },
+        fold: {
+            type: Boolean,
+            default: false
+        },
+        sticky: {
+            type: Boolean,
+            default: false
         }
     },
     data () {
         return {
-            balls: [
-                {
-                    show: false
-                },
-                {
-                    show: false
-                },
-                {
-                    show: false
-                },
-                {
-                    show: false
-                },
-                {
-                    show: false
-                }
-            ],
+            balls: createBalls(),
             dropBalls: [],
-            fold: false
+            listFold: this.fold
         };
     },
     computed: {
@@ -178,19 +125,6 @@ export default {
             } else {
                 return 'enough';
             }
-        },
-        listShow: {
-            get: function () {
-                return this.fold
-            },
-            set: function () {
-                if (!this.totalCount) {
-                    this.fold = true
-                    return false
-                }
-                let show = !this.fold
-                return show
-            }
         }
     },
     methods: {
@@ -205,14 +139,77 @@ export default {
                 }
             }
         },
+        /**
+         * listFold  作为控制购物车列表是否显示
+         * _showShopCartList() 方法调用createAPI 创建购物车列表组件
+         * _showShopCartSticky()方法调用createAPI 创建sticky购物车列表组件
+         * selectFoods：购物车列表数据 minPrice：最低价 deliveryPrice：总价  作为props传入sticky购物车列表组件
+         * fold：给 listFold 传值
+         * list：作为子组件传入shop-cart-sticky.vue组件  方便调用  在本组件中this.$parent.list === this.shopCartListComp 组件
+         */
         toggleList () {
-            if (!this.totalCount) {
-                return;
+            if (!this.listFold) {
+                if (!this.totalCount) {
+                    return;
+                }
+                this.listFold = true;
+                this._showShopCartList() // 新增购物车列表组件
+                this._showShopCartSticky() // 复制本组件  名称为 sticky购物车列表组件：复制购本组件解决 购物车列表组件 遮挡购 物车组件功能
+            } else {
+                this.listFold = false;
+                this._hideShopCartList() // 关闭购物车列表组件
             }
-            this.fold = !this.fold;
         },
-        hideList () {
-            this.fold = true;
+        /**
+         * 创建购物车列表组件
+         * selectFoods 传入购物车列表数据
+         *  $events 接受组件emit后回调函数
+         */
+        _showShopCartList () {
+            this.shopCartListComp = this.shopCartListComp || this.$createShopCartList({
+                $props: {
+                    selectFoods: 'selectFoods'
+                },
+                $events: {
+                    hide: () => {
+                        this.listFold = false;
+                    }
+                }
+            })
+            this.shopCartListComp.show()
+        },
+        /**
+         * 关闭购物车组件
+         * sticky 判断是原组件  还是创建的sticky复制的组件
+         * this.$parent.list 等于 this.shopCartListComp
+         * hide() 关闭购物车列表组件
+         */
+        _hideShopCartList () {
+            const comp = this.sticky ? this.$parent.list : this.shopCartListComp;
+            comp.hide && comp.hide()
+        },
+        /**
+         * 创建sticky购物车组件
+         * $props: {
+                    selectFoods: 'selectFoods',
+                    deliveryPrice: 'deliveryPrice',
+                    minPrice: 'minPrice',
+                    fold: 'listFold', 判断购物车列表是否显示
+                    list: this.shopCartListComp 等于this.$parent.list
+                }传入购物车需求的数据
+         * show()显示sticky复制的组件
+         */
+        _showShopCartSticky () {
+            this.showShopCartStickyComp = this.showShopCartStickyComp || this.$createShopCartSticky({
+                $props: {
+                    selectFoods: 'selectFoods',
+                    deliveryPrice: 'deliveryPrice',
+                    minPrice: 'minPrice',
+                    fold: 'listFold',
+                    list: this.shopCartListComp
+                }
+            })
+            this.showShopCartStickyComp.show()
         },
         empty () {
             this.selectFoods.forEach((food) => {
@@ -264,9 +261,6 @@ export default {
                 el.style.display = 'none';
             }
         }
-    },
-    components: {
-        cartcontrol
     }
 };
 </script>
@@ -278,7 +272,7 @@ export default {
     left 0;
     bottom 0;
     z-index 50;
-    width 100%;
+    width 100vw;
     height 48px;
     .content
         display flex;
@@ -372,70 +366,4 @@ export default {
                 border-radius 50%;
                 background rgb(0, 160, 220);
                 transition all 0.4s linear;
-    .shopcart-list
-        position absolute;
-        left 0;
-        top 0;
-        z-index -1;
-        width 100%;
-        transform translate3d(0, -100%, 0);
-        &.fold-enter-active, &.fold-leave-active
-            transition all 0.5s;
-        &.fold-enter, &.fold-leave-active
-            transform translate3d(0, 0, 0);
-        .list-header
-            height 40px;
-            line-height 40px;
-            padding 0 18px;
-            background #f3f5f7;
-            border-bottom 1px solid rgba(7, 17, 27, 0.1);
-            .title
-                float left;
-                font-size 14px;
-                color rgb(7, 17, 27);
-            .empty
-                float right;
-                font-size 12px;
-                color rgb(0, 160, 220);
-        .list-content
-            padding 0 18px;
-            max-height 217px;
-            overflow hidden;
-            background #fff;
-            .food
-                position relative;
-                padding 12px 0;
-                box-sizing border-box;
-                border-1px(rgba(7, 17, 27, 0.1));
-                .name
-                    line-height 24px;
-                    font-size 14px;
-                    color rgb(7, 17, 27);
-                .price
-                    position absolute;
-                    right 90px;
-                    bottom 12px;
-                    line-height 24px;
-                    font-size 14px;
-                    font-weight 700;
-                    color rgb(240, 20, 20);
-                .cartcontrol-wrapper
-                    position absolute;
-                    right 0;
-                    bottom 6px;
-.list-mask
-    position absolute;
-    top 0;
-    left 0;
-    width 100%;
-    height 100%;
-    z-index 40;
-    backdrop-filter blur(10px);
-    opacity 1;
-    background rgba(7, 17, 27, 0.6);
-    &.fade-enter-active, &.fade-leave-active
-        transition all 0.5s;
-    &.fade-enter, &.fade-leave-active
-        opacity 0;
-        background rgba(7, 17, 27, 0);
 </style>

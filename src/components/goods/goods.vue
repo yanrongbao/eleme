@@ -1,10 +1,29 @@
 <template>
     <div class="scroll-nav-wrapper">
-        <cube-scroll-nav @change="changeHandler"
-                         :side="true"
+        <cube-scroll-nav :side="true"
                          :data="goods"
                          :current="current"
                          v-if="goods.length">
+            <template slot="bar"
+                      slot-scope="props">
+                <cube-scroll-nav-bar direction="vertical"
+                                     :labels="props.labels"
+                                     :txts="barTxts"
+                                     :current="props.current">
+                    <template slot-scope="props">
+                        <div class="text">
+                            <span class="icon"
+                                  :class="classMap[props.txt.type]"
+                                  v-if="props.txt.type>=1"></span>
+                            <span>{{props.txt.name}}</span>
+                            <span class="num"
+                                  v-if="props.txt.count">
+                                <bubble :num="props.txt.count"></bubble>
+                            </span>
+                        </div>
+                    </template>
+                </cube-scroll-nav-bar>
+            </template>
             <cube-scroll-nav-panel v-for="good in goods"
                                    :key="good.name"
                                    :label="good.name"
@@ -24,14 +43,17 @@
                             <div class="extra">
                                 <span class="count">月售{{food.sellCount}}份</span><span>好评率{{food.rating}}%</span>
                             </div>
-                            <div class="price">
-                                <span class="now">￥{{food.price}}</span><span class="old"
-                                      v-show="food.oldPrice">￥{{food.oldPrice}}</span>
+                            <div class="price_cont">
+                                <div class="price">
+                                    <span class="now">￥{{food.price}}</span><span class="old"
+                                          v-show="food.oldPrice">￥{{food.oldPrice}}</span>
+                                </div>
+                                <div class="cartcontrol-wrapper">
+                                    <cartcontrol @add="onAdd"
+                                                 :food="food"></cartcontrol>
+                                </div>
                             </div>
-                            <div class="cartcontrol-wrapper">
-                                <cartcontrol @add="addFood"
-                                             :food="food"></cartcontrol>
-                            </div>
+
                         </div>
                     </li>
                 </ul>
@@ -40,7 +62,8 @@
         <div class="shop-cart-wrapper">
             <shop-cart :delivery-price="seller.deliveryPrice"
                        :select-foods="selectFoods"
-                       :min-price="seller.minPrice"></shop-cart>
+                       :min-price="seller.minPrice"
+                       ref="shopCart"></shop-cart>
         </div>
     </div>
 </template>
@@ -48,6 +71,7 @@
 import { getGoods } from 'api';
 import ShopCart from 'components/shop-cart/shop-cart.vue';
 import cartcontrol from 'components/cartcontrol/cartcontrol';
+import bubble from 'components/bubble/bubble'
 export default {
     data () {
         return {
@@ -58,6 +82,9 @@ export default {
             },
             current: '热销榜'
         }
+    },
+    created () {
+        this.classMap = ['decrease', 'discount', 'special', 'invoice', 'guarantee'];
     },
     props: {
         data: {
@@ -79,35 +106,47 @@ export default {
                 })
             })
             return ret;
+        },
+        barTxts () {
+            let ret = [];
+            this.goods.forEach((good) => {
+                const { type, name, foods } = good;
+                let count = 0;
+                foods.forEach((food) => {
+                    count += food.count || 0;
+                })
+                ret.push({
+                    type,
+                    name,
+                    count
+                })
+            })
+            return ret;
         }
     },
     methods: {
-        changeHandler (label) {
-            this.current = label;
-        },
         fetch () {
             getGoods().then(goods => {
                 this.goods = goods;
             })
         },
-        stickyChangeHandler (current) {
-            console.log('sticky-change', current)
-        },
-        addFood () {
-
+        onAdd (el) {
+            this.$refs.shopCart.drop(el)
         }
     },
     components: {
         ShopCart,
-        cartcontrol
+        cartcontrol,
+        bubble
     }
 }
 </script>
 <style lang="stylus" scoped>
-@import 'common/stylus/variable.styl';
+@import '../../common/stylus/mixin';
+@import '~common/stylus/variable.styl';
 .scroll-nav-wrapper
-    width 100%;
-    position absolute;
+    width 100vw;
+    position fixed;
     top 0;
     left 0;
     bottom 48px;
@@ -142,11 +181,41 @@ export default {
                 margin 0 20px 0 0;
         .content
             line-height 20px;
-        .price
-            .now
-                color $color-red;
-                margin 0 15px 0 0;
-            .old
-                font-size $fontsize-small;
-                text-decoration line-through;
+            width 0;
+            overflow hidden;
+            flex 1;
+        .price_cont
+            position relative;
+            .price
+                .now
+                    color $color-red;
+                    margin 0 15px 0 0;
+                .old
+                    font-size $fontsize-small;
+                    text-decoration line-through;
+            .cartcontrol-wrapper
+                position absolute;
+                right 30px;
+                top -2px;
+    .text
+        position relative;
+        .icon
+            width 16px;
+            height 16px;
+            display inline-block;
+            background-size 100%;
+            &.decrease
+                bg-image('images/decrease_3');
+            &.discount
+                bg-image('images/discount_3');
+            &.guarantee
+                bg-image('images/guarantee_3');
+            &.invoice
+                bg-image('images/invoice_3');
+            &.special
+                bg-image('images/special_3');
+        .num
+            position absolute;
+            right -10px;
+            top -10px;
 </style>
