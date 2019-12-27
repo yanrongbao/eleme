@@ -31,6 +31,7 @@
                 <ul>
                     <li v-for="(food,index) in good.foods"
                         :key="index"
+                        @click="selectFood(food)"
                         class="food-item">
                         <div class="icon">
                             <img width="57"
@@ -80,7 +81,8 @@ export default {
                 cilck: false,
                 directionLockThreshold: 0
             },
-            current: '热销榜'
+            current: '热销榜',
+            selectedFood: {}
         }
     },
     created () {
@@ -125,13 +127,51 @@ export default {
         }
     },
     methods: {
+        selectFood (food) {
+            this.selectedFood = food;
+            this._showFood();
+            this._showShopCartSticky();
+        },
         fetch () {
-            getGoods().then(goods => {
-                this.goods = goods;
-            })
+            if (!this.fetched) {
+                this.fetched = true;
+                getGoods().then(goods => {
+                    this.goods = goods;
+                })
+            }
         },
         onAdd (el) {
             this.$refs.shopCart.drop(el)
+        },
+        _showFood () {
+            this.foodComp = this.foodComp || this.$createFood({
+                $props: {
+                    food: 'selectedFood'
+                },
+                $events: {
+                    leave: () => {
+                        this._hideShopCartSticky();
+                    },
+                    add: (el) => {
+                        this.shopCartStickyComp.drop(el);
+                    }
+                }
+            })
+            this.foodComp.show()
+        },
+        _showShopCartSticky () {
+            this.shopCartStickyComp = this.shopCartStickyComp || this.$createShopCartSticky({
+                $props: {
+                    selectFoods: 'selectFoods',
+                    deliveryPrice: this.seller.deliveryPrice,
+                    minPrice: this.seller.minPrice,
+                    fold: false
+                }
+            })
+            this.shopCartStickyComp.show();
+        },
+        _hideShopCartSticky () {
+            this.shopCartStickyComp.hide();
         }
     },
     components: {

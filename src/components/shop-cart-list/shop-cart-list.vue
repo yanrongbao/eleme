@@ -1,17 +1,19 @@
 <template>
     <transition name="fade">
         <cube-popup type="shop-cart-list"
-                    v-show="visiable"
+                    v-show="visible"
                     :mask-closable="true"
                     :z-index="90"
                     position="bottom"
                     @mask-click="maskClcik">
-            <transition name="move">
+            <transition name="move"
+                        @after-leave="leave">
                 <div class="shopcart-list"
-                     v-show="visiable">
+                     v-show="visible">
                     <div class="list-header">
                         <h1 class="title">购物车</h1>
-                        <span class="empty">清空</span>
+                        <span class="empty"
+                              @click="empty">清空</span>
                     </div>
                     <cube-scroll class="list-content"
                                  ref="listContent">
@@ -24,7 +26,8 @@
                                     <span>￥{{food.price*food.count}}</span>
                                 </div>
                                 <div class="cartcontrol-wrapper">
-                                    <cartcontrol :food="food"></cartcontrol>
+                                    <cartcontrol @add="add"
+                                                 :food="food"></cartcontrol>
                                 </div>
                             </li>
                         </ul>
@@ -36,30 +39,49 @@
 </template>
 <script>
 import cartcontrol from 'components/cartcontrol/cartcontrol';
-const EVENT_HIDE = 'hide';
+import popupMixin from 'common/mixins/popup';
+const EVENT_LEAVE = 'leave';
+const EVENT_SHOW = 'show';
+const EVENT_ADD = 'add';
 export default {
+    mixins: [popupMixin],
     name: 'shop-cart-list',
-    data () {
-        return {
-            visiable: false
-        }
-    },
     props: {
         selectFoods: {
             type: Array,
             default: () => ([])
         }
     },
+    created () {
+        this.$on(EVENT_SHOW, () => {
+            this.$nextTick(() => {
+                this.$refs.listContent.refresh()
+            })
+        })
+    },
     methods: {
-        show () {
-            this.visiable = true;
-        },
-        hide () {
-            this.visiable = false;
-            this.$emit(EVENT_HIDE);
-        },
         maskClcik () {
             this.hide()
+        },
+        leave () {
+            this.$emit(EVENT_LEAVE);
+        },
+        add (target) {
+            this.$emit(EVENT_ADD, target);
+        },
+        empty () {
+            this.$createDialog({
+                type: 'confirm',
+                content: '清空购物吗？',
+                $events: {
+                    confirm: () => {
+                        this.selectFoods.forEach((item) => {
+                            item.count = 0;
+                        })
+                        this.hide();
+                    }
+                }
+            }).show()
         }
     },
     components: {
@@ -113,10 +135,12 @@ export default {
             border-1px(rgba(7, 17, 27, 0.1));
             .name
                 line-height 24px;
+                flex 1;
                 font-size 14px;
                 color rgb(7, 17, 27);
             .price
                 line-height 24px;
+                margin-right 30px;
                 margin-left 120px;
                 font-size 14px;
                 font-weight 700;

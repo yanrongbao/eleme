@@ -18,7 +18,7 @@
                     <div class="desc">另需配送费￥{{deliveryPrice}}元</div>
                 </div>
                 <div class="content-right"
-                     @click.stop.prevent="pay">
+                     @click="pay">
                     <div class="pay"
                          :class="payClass">
                         {{payDesc}}
@@ -127,6 +127,16 @@ export default {
             }
         }
     },
+    watch: {
+        fold (newVal) {
+            this.listFold = newVal;
+        },
+        totalCount (newVal) {
+            if (this.listFold && !newVal) {
+                this._hideShopCartList()
+            }
+        }
+    },
     methods: {
         drop (el) {
             for (let i = 0; i < this.balls.length; i++) {
@@ -153,11 +163,11 @@ export default {
                     return;
                 }
                 this.listFold = true;
-                this._showShopCartList() // 新增购物车列表组件
-                this._showShopCartSticky() // 复制本组件  名称为 sticky购物车列表组件：复制购本组件解决 购物车列表组件 遮挡购 物车组件功能
+                this._showShopCartList(); // 新增购物车列表组件
+                this._showShopCartSticky(); // 复制本组件  名称为 sticky购物车列表组件：复制购本组件解决 购物车列表组件 遮挡购 物车组件功能
             } else {
                 this.listFold = false;
-                this._hideShopCartList() // 关闭购物车列表组件
+                this._hideShopCartList(); // 关闭购物车列表组件
             }
         },
         /**
@@ -173,10 +183,16 @@ export default {
                 $events: {
                     hide: () => {
                         this.listFold = false;
+                    },
+                    leave: () => {
+                        this.showShopCartStickyComp.hide();
+                    },
+                    add: (el) => {
+                        this.showShopCartStickyComp.drop(el);
                     }
                 }
             })
-            this.shopCartListComp.show()
+            this.shopCartListComp.show();
         },
         /**
          * 关闭购物车组件
@@ -186,7 +202,7 @@ export default {
          */
         _hideShopCartList () {
             const comp = this.sticky ? this.$parent.list : this.shopCartListComp;
-            comp.hide && comp.hide()
+            comp.hide && comp.hide();
         },
         /**
          * 创建sticky购物车组件
@@ -209,18 +225,22 @@ export default {
                     list: this.shopCartListComp
                 }
             })
-            this.showShopCartStickyComp.show()
+            this.showShopCartStickyComp.show();
         },
         empty () {
             this.selectFoods.forEach((food) => {
                 food.count = 0;
             });
         },
-        pay () {
+        pay (e) {
             if (this.totalPrice < this.minPrice) {
                 return;
             }
-            window.alert(`支付${this.totalPrice}元`);
+            this.dialogCom = this.$createDialog({
+                title: '支付',
+                content: `支付${this.totalPrice}元`
+            }).show();
+            e.stopPropagation();
         },
         addFood (target) {
             this.drop(target);

@@ -1,8 +1,11 @@
 <template>
-    <div id="app">
-        <v-header :seller="seller"></v-header>
-        <tab :tabs="tabs" :initialIndex="0"></tab>
-    </div>
+    <keep-alive>
+        <div id="app">
+            <v-header :seller="seller"></v-header>
+            <tab :tabs="tabs"
+                 :initialIndex="0"></tab>
+        </div>
+    </keep-alive>
 </template>
 
 <script>
