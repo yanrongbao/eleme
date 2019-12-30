@@ -11,7 +11,7 @@
                   class="block negative"
                   :class="{'active':selectType===1}">{{desc.negative}}<span class="count">{{negatives.length}}</span></span>
         </div>
-        <div @click="toggleContent"
+        <div @touchend="toggleContent"
              class="switch"
              :class="{'on':onlyContent}">
             <span class="icon-check_circle"></span>
@@ -71,10 +71,7 @@ export default {
             }
             this.$emit('select', type);
         },
-        toggleContent (event) {
-            if (!event._constructed) {
-                return;
-            }
+        toggleContent () {
             this.$emit('toggle');
         }
     }

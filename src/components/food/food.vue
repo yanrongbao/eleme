@@ -86,6 +86,7 @@ import cartcontrol from 'components/cartcontrol/cartcontrol';
 import ratingselect from 'components/ratingselect/ratingselect';
 import split from 'components/split/split';
 import popupMixin from 'common/mixins/popup';
+import ratingMixin from 'common/mixins/rating';
 
 const ALL = 2;
 const EVENT_SHOW = 'show';
@@ -93,7 +94,7 @@ const EVENT_LEAVE = 'leave';
 const EVENT_ADD = 'add';
 
 export default {
-    mixins: [popupMixin],
+    mixins: [popupMixin, ratingMixin],
     name: 'food',
     props: {
         food: {
@@ -114,8 +115,6 @@ export default {
     },
     data () {
         return {
-            selectType: ALL,
-            onlyContent: true,
             desc: {
                 all: '全部',
                 positive: '推荐',
@@ -140,18 +139,6 @@ export default {
         },
         addFood (target) {
             this.$emit(EVENT_ADD, target);
-        },
-        selectRating (type) {
-            this.selectType = type;
-            this.$nextTick(() => {
-                this.$refs.scroll.refresh();
-            });
-        },
-        toggleContent () {
-            this.onlyContent = !this.onlyContent;
-            this.$nextTick(() => {
-                this.$refs.scroll.refresh();
-            });
         },
         onLeave () {
             this.$emit(EVENT_LEAVE);
